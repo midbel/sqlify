@@ -1,0 +1,27 @@
+{
+  "name": "sweety",
+  "version": "0.1.0",
+  "description": "simple sql builder",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "vitest",
+    "cover": "vitest run --coverage",
+    "lint": "eslint src/*mjs"
+  },
+  "keywords": [
+    "sql builder"
+  ],
+  "author": "midbel",
+  "license": "MIT",
+  "devDependencies": {
+    "@vitest/coverage-v8": "^0.34.6",
+    "@vitest/ui": "^0.34.6",
+    "eslint": "^8.54.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-n": "^16.3.1",
+    "eslint-plugin-promise": "^6.1.1",
+    "prettier": "^3.1.0",
+    "vitest": "^0.34.6"
+  }
+}
