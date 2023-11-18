@@ -117,6 +117,37 @@ class Alias {
   }
 }
 
+class Join {
+	constructor(table, cdt) {
+		this.table = table
+		this.cdt = cdt
+		this.inner = true
+		this.left = true	
+	}
+
+	eq(column, value) {
+		this.cdt.push(createEqual(column, value))
+		return this
+	}
+
+	ne(column, value) {
+		this.cdt.push(createNotEqual(column, value))
+		return this
+	}
+
+	toSql() {
+		let cs = this.cdt.map(sqlify)
+		let q = "join"
+		if (!this.inner && this.left) {
+			q = "left join"
+		} else if (!this.inner && !this.left) {
+			q = "right join"
+		}
+		q = `${q} ${sqlify(this.table)}`
+		return `${q} on ${cs.join(' and ')}`
+	}
+}
+
 class Select {
   constructor (table) {
     this.bases = [table]
@@ -135,14 +166,26 @@ class Select {
   }
 
   join (table, ...rest) {
+  	const j = new Join(table, rest)
+  	j.inner = true
+  	j.left = true
+  	this.joins.push(j)
   	return this
   }
 
   leftjoin (table, ...rest) {
+  	const j = new Join(table, rest)
+  	j.inner = false
+  	j.left = true
+  	this.joins.push(j)
   	return this
   }
 
   rightjoin (table, ...rest) {
+  	const j = new Join(table, rest)
+  	j.inner = false
+  	j.left = false
+  	this.joins.push(j)
   	return this
   }
 
@@ -223,7 +266,8 @@ class Select {
     const tables = this.bases.map(sqlify)
     let q = `select ${cs.join(', ')} from ${tables.join(', ')}`
     if (this.joins.length > 0) {
-
+    	const js = this.joins.map(sqlify)
+    	q = `${q} ${js.join(' ')}`
     }
     if (this.wheres.length > 0) {
     	const ws = this.wheres.map(sqlify)

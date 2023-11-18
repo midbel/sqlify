@@ -52,3 +52,9 @@ test('select with predicates', () => {
     .between(between(column('salary', {schema: 'e'}), 2000, 3000))
   expect(q2.toSql()).to.equal("select * from employees e where e.salary between 2000 and 3000")
 })
+
+test('select with join', () => {
+  const q = select(alias('employees', 'e'))
+    .join(alias('departments', 'd'), eq(column('dept', {schema: 'e'}), column('id', {schema: 'd'})))  
+  expect(q.toSql()).to.equal('select * from employees e join departments d on e.dept=d.id')
+})
