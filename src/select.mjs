@@ -113,6 +113,9 @@ class Alias {
     if (!this.alias) {
       return sqlify(this.name)
     }
+    if (this.name instanceof Select) {
+    	return `(${sqlify(this.name)}) ${this.alias}`	
+    }
     return `${sqlify(this.name)} ${this.alias}`
   }
 }
@@ -294,15 +297,11 @@ function createValue (value) {
   throw new Error('invalid value type')
 }
 
-function createColumn (name, { schema = '', alias = '' } = {}) {
+function createColumn (name, schema = '') {
   if (typeof name !== 'string') {
     throw new Error('expect name to be of type string')
   }
-  let c = new Column(name, schema)
-  if (alias) {
-    c = new Alias(c, alias)
-  }
-  return c
+  return new Column(name, schema)
 }
 
 function createAlias (name, alias) {
