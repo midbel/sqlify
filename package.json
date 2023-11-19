@@ -1,5 +1,5 @@
 {
-  "name": "sweety",
+  "name": "sqlify",
   "version": "0.1.0",
   "description": "simple sql builder",
   "main": "src/index.js",
@@ -11,6 +11,7 @@
   "keywords": [
     "sql builder"
   ],
+  "repository": "https://github.com/midbel/sqlify",
   "author": "midbel",
   "license": "MIT",
   "devDependencies": {
