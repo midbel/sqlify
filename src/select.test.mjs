@@ -50,30 +50,30 @@ test('select with predicates', () => {
 
   const q2 = select(alias('employees', 'e'))
     .between(between(column('salary', 'e'), 2000, 3000))
-  expect(q2.toSql()).to.equal("select * from employees e where e.salary between 2000 and 3000")
+  expect(q2.toSql()).to.equal('select * from employees e where e.salary between 2000 and 3000')
 })
 
 test('select with join', () => {
   let q = select(alias('employees', 'e'))
-    .join(alias('departments', 'd'), eq(column('dept', 'e'), column('id', 'd')))  
+    .join(alias('departments', 'd'), eq(column('dept', 'e'), column('id', 'd')))
   expect(q.toSql()).to.equal('select * from employees e join departments d on e.dept=d.id')
 
   q = select(alias('employees', 'e'))
     .leftjoin(
-      alias('departments', 'd'), 
+      alias('departments', 'd'),
       eq(column('dept', 'e'), column('id', 'd')),
       eq(column('dept', 'e'), value('it'))
     )
   expect(q.toSql()).to.equal('select * from employees e left join departments d on e.dept=d.id and e.dept=\'it\'')
 
   q = select(alias('employees', 'e'))
-    .rightjoin(alias('departments', 'd'), eq(column('dept', 'e'), column('id', 'd')))  
+    .rightjoin(alias('departments', 'd'), eq(column('dept', 'e'), column('id', 'd')))
   expect(q.toSql()).to.equal('select * from employees e right join departments d on e.dept=d.id')
 })
 
 test('select subquery', () => {
   const d = select('departments')
-  const q = select(alias('employees', 'e')).join(alias(d, "d"), eq(column('dept', 'e'), column('id', 'd')))
+  const q = select(alias('employees', 'e')).join(alias(d, 'd'), eq(column('dept', 'e'), column('id', 'd')))
 
   expect(q.toSql()).to.equal('select * from employees e join (select * from departments) d on e.dept=d.id')
 })

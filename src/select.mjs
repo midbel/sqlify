@@ -91,7 +91,7 @@ class Column {
     this.schema = schema
   }
 
-  alias(name) {
+  alias (name) {
   	return createAlias(this, name)
   }
 
@@ -114,92 +114,92 @@ class Alias {
       return sqlify(this.name)
     }
     if (this.name instanceof Select) {
-    	return `(${sqlify(this.name)}) ${this.alias}`	
+    	return `(${sqlify(this.name)}) ${this.alias}`
     }
     return `${sqlify(this.name)} ${this.alias}`
   }
 }
 
 class Order {
-	constructor (column, order = 'asc') {
-		this.column = column
-		this.order = order
-	}
+  constructor (column, order = 'asc') {
+    this.column = column
+    this.order = order
+  }
 
-	toSql () {
-		return `${sqlify(this.column)} ${this.order}`
-	}
+  toSql () {
+    return `${sqlify(this.column)} ${this.order}`
+  }
 }
 
 class Join {
-	constructor(table, cdt) {
-		this.table = table
-		this.cdt = cdt
-		this.inner = true
-		this.left = true	
-	}
+  constructor (table, cdt) {
+    this.table = table
+    this.cdt = cdt
+    this.inner = true
+    this.left = true
+  }
 
-	eq(column, value) {
-		this.cdt.push(createEqual(column, value))
-		return this
-	}
+  eq (column, value) {
+    this.cdt.push(createEqual(column, value))
+    return this
+  }
 
-	ne(column, value) {
-		this.cdt.push(createNotEqual(column, value))
-		return this
-	}
+  ne (column, value) {
+    this.cdt.push(createNotEqual(column, value))
+    return this
+  }
 
-	toSql() {
-		let cs = this.cdt.map(sqlify)
-		let q = "join"
-		if (!this.inner && this.left) {
-			q = "left join"
-		} else if (!this.inner && !this.left) {
-			q = "right join"
-		}
-		q = `${q} ${sqlify(this.table)}`
-		return `${q} on ${cs.join(' and ')}`
-	}
+  toSql () {
+    const cs = this.cdt.map(sqlify)
+    let q = 'join'
+    if (!this.inner && this.left) {
+      q = 'left join'
+    } else if (!this.inner && !this.left) {
+      q = 'right join'
+    }
+    q = `${q} ${sqlify(this.table)}`
+    return `${q} on ${cs.join(' and ')}`
+  }
 }
 
 class Union {
-	constructor () {
-		this.queries = []
-		this.all = false
-	}
+  constructor () {
+    this.queries = []
+    this.all = false
+  }
 
-	append (q) {
-		this.queries.push(q)
-		return this
-	}
+  append (q) {
+    this.queries.push(q)
+    return this
+  }
 
-	toSql () {
-		let q = 'union'
-		if (this.all) {
-			q = ` ${q} all `
-		}
-		return this.queries.map(sqlify).join(q)
-	}
+  toSql () {
+    let q = 'union'
+    if (this.all) {
+      q = ` ${q} all `
+    }
+    return this.queries.map(sqlify).join(q)
+  }
 }
 
 class Intersect {
-	constructor () {
-		this.queries = []
-		this.all = false
-	}
+  constructor () {
+    this.queries = []
+    this.all = false
+  }
 
-	append (q) {
-		this.queries.push(q)
-		return this
-	}
+  append (q) {
+    this.queries.push(q)
+    return this
+  }
 
-	toSql () {
-		let q = 'intersect'
-		if (this.all) {
-			q = ` ${q} all `
-		}
-		return this.queries.map(sqlify).join(q)
-	}
+  toSql () {
+    let q = 'intersect'
+    if (this.all) {
+      q = ` ${q} all `
+    }
+    return this.queries.map(sqlify).join(q)
+  }
 }
 
 class Select {
@@ -223,7 +223,7 @@ class Select {
   	return u
   }
 
-  intersect(other, all = false) {
+  intersect (other, all = false) {
   	const i = new Intersect()
   	i.all = all
   	i.append(this)
@@ -346,7 +346,7 @@ class Select {
     }
 
     const tables = this.bases.map(sqlify)
-    let kw = this.distinct ? 'select distinct' : 'select'
+    const kw = this.distinct ? 'select distinct' : 'select'
     let q = `${kw} ${cs.join(', ')} from ${tables.join(', ')}`
 
     if (this.joins.length > 0) {
