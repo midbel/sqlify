@@ -120,6 +120,17 @@ class Alias {
   }
 }
 
+class Order {
+	constructor (column, order = 'asc') {
+		this.column = column
+		this.order = order
+	}
+
+	toSql () {
+		return `${sqlify(this.column)} ${this.order}`
+	}
+}
+
 class Join {
 	constructor(table, cdt) {
 		this.table = table
@@ -151,8 +162,49 @@ class Join {
 	}
 }
 
+class Union {
+	constructor () {
+		this.queries = []
+		this.all = false
+	}
+
+	append (q) {
+		this.queries.push(q)
+		return this
+	}
+
+	toSql () {
+		let q = 'union'
+		if (this.all) {
+			q = ` ${q} all `
+		}
+		return this.queries.map(sqlify).join(q)
+	}
+}
+
+class Intersect {
+	constructor () {
+		this.queries = []
+		this.all = false
+	}
+
+	append (q) {
+		this.queries.push(q)
+		return this
+	}
+
+	toSql () {
+		let q = 'intersect'
+		if (this.all) {
+			q = ` ${q} all `
+		}
+		return this.queries.map(sqlify).join(q)
+	}
+}
+
 class Select {
   constructor (table) {
+    this.distinct = false
     this.bases = [table]
     this.joins = []
     this.fields = []
@@ -161,6 +213,22 @@ class Select {
     this.orders = []
     this.count = 0
     this.offset = 0
+  }
+
+  union (other, all = false) {
+  	const u = new Union()
+  	u.all = all
+  	u.append(this)
+  	u.append(other)
+  	return u
+  }
+
+  intersect(other, all = false) {
+  	const i = new Intersect()
+  	i.all = all
+  	i.append(this)
+  	i.append(other)
+  	return i
   }
 
   from (table) {
@@ -203,6 +271,16 @@ class Select {
     }
     this.fields.push(name)
     return this
+  }
+
+  groupby (name) {
+  	this.groups.push(name)
+  	return this
+  }
+
+  orderby (name, order = 'asc') {
+  	this.orders.push(new Order(name, order))
+  	return this
   }
 
   eq (column) {
@@ -266,19 +344,35 @@ class Select {
     if (this.fields.length > 0) {
       cs = this.fields.map(sqlify)
     }
+
     const tables = this.bases.map(sqlify)
-    let q = `select ${cs.join(', ')} from ${tables.join(', ')}`
+    let kw = this.distinct ? 'select distinct' : 'select'
+    let q = `${kw} ${cs.join(', ')} from ${tables.join(', ')}`
+
     if (this.joins.length > 0) {
     	const js = this.joins.map(sqlify)
     	q = `${q} ${js.join(' ')}`
     }
+
     if (this.wheres.length > 0) {
     	const ws = this.wheres.map(sqlify)
     	q = `${q} where ${ws.join(' and ')}`
     }
+
+    if (this.groups.length > 0) {
+    	const gs = this.groups.map(sqlify)
+    	q = `${q} group by ${gs.join(', ')}`
+    }
+
+    if (this.orders.length > 0) {
+    	const os = this.orders.map(sqlify)
+    	q = `${q} order by ${os.join(', ')}`
+    }
+
     if (this.count > 0) {
       q = `${q} limit ${this.count}`
     }
+
     if (this.offset > 0) {
       q = `${q} offset ${this.offset}`
     }

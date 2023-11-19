@@ -54,9 +54,21 @@ test('select with predicates', () => {
 })
 
 test('select with join', () => {
-  const q = select(alias('employees', 'e'))
+  let q = select(alias('employees', 'e'))
     .join(alias('departments', 'd'), eq(column('dept', 'e'), column('id', 'd')))  
   expect(q.toSql()).to.equal('select * from employees e join departments d on e.dept=d.id')
+
+  q = select(alias('employees', 'e'))
+    .leftjoin(
+      alias('departments', 'd'), 
+      eq(column('dept', 'e'), column('id', 'd')),
+      eq(column('dept', 'e'), value('it'))
+    )
+  expect(q.toSql()).to.equal('select * from employees e left join departments d on e.dept=d.id and e.dept=\'it\'')
+
+  q = select(alias('employees', 'e'))
+    .rightjoin(alias('departments', 'd'), eq(column('dept', 'e'), column('id', 'd')))  
+  expect(q.toSql()).to.equal('select * from employees e right join departments d on e.dept=d.id')
 })
 
 test('select subquery', () => {
@@ -64,4 +76,11 @@ test('select subquery', () => {
   const q = select(alias('employees', 'e')).join(alias(d, "d"), eq(column('dept', 'e'), column('id', 'd')))
 
   expect(q.toSql()).to.equal('select * from employees e join (select * from departments) d on e.dept=d.id')
+})
+
+test('select order', () => {
+  let q = select('employees').orderby('department', 'desc')
+  expect(q.toSql()).to.equal('select * from employees order by department desc')
+  q = select('employees').orderby('department')
+  expect(q.toSql()).to.equal('select * from employees order by department asc')
 })
