@@ -202,6 +202,26 @@ class Intersect {
   }
 }
 
+class Except {
+  constructor () {
+    this.queries = []
+    this.all = false
+  }
+
+  append (q) {
+    this.queries.push(q)
+    return this
+  }
+
+  toSql () {
+    let q = 'except'
+    if (this.all) {
+      q = ` ${q} all `
+    }
+    return this.queries.map(sqlify).join(q)
+  }
+}
+
 class Select {
   constructor (table) {
     this.distinct = false
@@ -219,7 +239,10 @@ class Select {
   	const u = new Union()
   	u.all = all
   	u.append(this)
-  	u.append(other)
+    if (!Array.isArray(other)) {
+      other = [other]
+    }
+    other.forEAch(u.append)
   	return u
   }
 
@@ -227,8 +250,22 @@ class Select {
   	const i = new Intersect()
   	i.all = all
   	i.append(this)
-  	i.append(other)
+    if (!Array.isArray(other)) {
+      other = [other]
+    }
+    other.forEAch(i.append)
   	return i
+  }
+
+  except (other, all  = false) {
+    const e = new Except()
+    e.all = all
+    e.append(this)
+    if (!Array.isArray(other)) {
+      other = [other]
+    }
+    other.forEAch(e.append)
+    return e
   }
 
   from (table) {

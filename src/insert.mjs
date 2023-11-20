@@ -28,6 +28,11 @@ class Insert {
 		return this
 	}
 
+	// values (...rest) {
+	// 	rest.forEach(this.value)
+	// 	return this
+	// }
+
 	value (val = marker) {
 		if (this.query) {
 			throw new Error("choose between query or value - not both!")
