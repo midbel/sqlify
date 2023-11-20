@@ -1,5 +1,6 @@
 import { test, expect } from 'vitest'
 import { select, alias, column, value, eq, ne, between } from './select'
+import { marker } from './utils'
 
 test('select basic', () => {
   const q = select('employees')
@@ -51,6 +52,9 @@ test('select with predicates', () => {
   const q2 = select(alias('employees', 'e'))
     .between(between(column('salary', 'e'), 2000, 3000))
   expect(q2.toSql()).to.equal('select * from employees e where e.salary between 2000 and 3000')
+
+  const q3 = select(alias('employees', 'e')).in(column('dept', 'e'), ['it', 'sales', marker])
+  expect(q3.toSql()).to.equal('select * from employees e where e.dept in (\'it\', \'sales\', ?)')
 })
 
 test('select with join', () => {

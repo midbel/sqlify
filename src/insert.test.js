@@ -12,6 +12,6 @@ test('test insert', () => {
     .value('it')
   expect(q.toSql()).to.equal('insert into employees values (\'john\', \'smith\', \'it\')')
 
-  q = insert('employees').columns('name', 'dept', 'age').select(select("employees"))
+  q = insert('employees').columns('name', 'dept', 'age').select(select('employees'))
   expect(q.toSql()).to.equal('insert into employees (name, dept, age) select * from employees')
 })

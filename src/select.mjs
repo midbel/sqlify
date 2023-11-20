@@ -22,6 +22,25 @@ function createBetween (name, lower = marker, upper = marker) {
   return new Between(name, lower, upper)
 }
 
+class In {
+  constructor (field, values) {
+    this.field = field
+    this.values = values
+  }
+
+  toSql () {
+    const vs = this.values.map(sqlify)
+    return `${sqlify(this.field)} in (${vs.join(', ')})`
+  }
+}
+
+function createIn (field, ...values) {
+  if (typeof field === 'string') {
+    field = createColumn(field)
+  }
+  return new In(field, values.map(createValue))
+}
+
 class Comparison {
   constructor (field, value = marker, op = '=') {
     this.field = field
@@ -257,7 +276,7 @@ class Select {
   	return i
   }
 
-  except (other, all  = false) {
+  except (other, all = false) {
     const e = new Except()
     e.all = all
     e.append(this)
@@ -368,12 +387,17 @@ class Select {
   	return this
   }
 
-  between (column) {
+  between (column, not = false) {
     if (typeof column === 'string') {
   		column = createBetween(column)
   	}
   	this.wheres.push(column)
   	return this
+  }
+
+  in (column, values) {
+    this.wheres.push(createIn(column, ...values))
+    return this
   }
 
   toSql () {
@@ -422,10 +446,13 @@ function createSelect (table) {
 }
 
 function createValue (value) {
+  if (value === marker) {
+    return value
+  }
   if (isPrimitive(value)) {
     return new Value(value)
   }
-  throw new Error('invalid value type')
+  throw new Error(`invalid value type: ${value}`)
 }
 
 function createColumn (name, schema = '') {
@@ -454,4 +481,5 @@ export {
   createGreaterThan as gt,
   createGreaterOrEqual as ge,
   createBetween as between
+  // createIn as in,
 }
