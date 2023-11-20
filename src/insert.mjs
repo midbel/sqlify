@@ -7,6 +7,7 @@ class Insert {
 		this.table = table
 		this.fields = []
 		this.values = []
+		this.query = null
 	}
 
 	columns (...rest) {
@@ -19,7 +20,18 @@ class Insert {
 		return this
 	}
 
+	select (query) {
+		if (this.values.length > 0) {
+			throw new Error("choose between query or value - not both!")
+		}
+		this.query = query
+		return this
+	}
+
 	value (val = marker) {
+		if (this.query) {
+			throw new Error("choose between query or value - not both!")
+		}
 		if (isPrimitive(val)) {
 			val = value(val)
 		}
@@ -32,6 +44,9 @@ class Insert {
 		if (this.fields.length > 0) {
 			const fs = this.fields.map(sqlify)
 			q = `${q} (${fs.join(', ')})`
+		}
+		if (this.query) {
+			return `${q} ${sqlify(this.query)}`
 		}
 
 		let vs = []
