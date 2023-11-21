@@ -1,6 +1,7 @@
 import { test, expect } from 'vitest'
 import { select, alias, column, value, eq, ne, between } from './select'
 import { marker } from './utils'
+import { exec } from './func'
 
 test('select basic', () => {
   const q = select('employees')
@@ -87,4 +88,10 @@ test('select order', () => {
   expect(q.toSql()).to.equal('select * from employees order by department desc')
   q = select('employees').orderby('department')
   expect(q.toSql()).to.equal('select * from employees order by department asc')
+})
+
+test('select with functions', () => {
+  const fn = exec('concat', [column('first', 'e'), column('last', 'e')])
+  const q = select(alias('employees', 'e')).column(alias(fn, 'full'))
+  expect(q.toSql()).to.equal('select concat(e.first, e.last) full from employees e')
 })

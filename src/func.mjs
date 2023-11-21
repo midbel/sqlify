@@ -12,6 +12,10 @@ class Function {
 	}
 }
 
+function createExec(name, args) {
+	return new Function(name, args)
+}
+
 export {
 	createExec as exec,
 }
