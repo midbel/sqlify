@@ -1,4 +1,5 @@
 import { sqlify, marker, isPrimitive } from './utils'
+import { checkIdent } from './ident'
 
 class Between {
   constructor (field, lower = marker, upper = marker) {
@@ -18,6 +19,9 @@ function createBetween (name, lower = marker, upper = marker) {
   }
   if (typeof upper === 'string') {
     upper = createValue(upper)
+  }
+  if (typeof name === 'string') {
+    name = checkIdent(name)
   }
   return new Between(name, lower, upper)
 }
@@ -60,6 +64,9 @@ class Comparison {
 function createComparison (field, value = marker, operator = '?') {
   if (typeof value === 'string') {
     value = createValue(value)
+  }
+  if (typeof field === 'string') {
+    field = checkIdent(field)
   }
   return new Comparison(field, value, operator)
 }
@@ -195,9 +202,9 @@ class Union {
   toSql () {
     let q = 'union'
     if (this.all) {
-      q = ` ${q} all `
+      q = `${q} all`
     }
-    return this.queries.map(sqlify).join(q)
+    return this.queries.map(sqlify).join(` ${q} `)
   }
 }
 
@@ -215,9 +222,9 @@ class Intersect {
   toSql () {
     let q = 'intersect'
     if (this.all) {
-      q = ` ${q} all `
+      q = `${q} all`
     }
-    return this.queries.map(sqlify).join(q)
+    return this.queries.map(sqlify).join(` ${q} `)
   }
 }
 
@@ -235,9 +242,9 @@ class Except {
   toSql () {
     let q = 'except'
     if (this.all) {
-      q = ` ${q} all `
+      q = `${q} all`
     }
-    return this.queries.map(sqlify).join(q)
+    return this.queries.map(sqlify).join(` ${q} `)
   }
 }
 
@@ -256,35 +263,34 @@ class Select {
 
   union (other, all = false) {
   	const u = new Union()
-  	u.all = all
-  	u.append(this)
-    if (!Array.isArray(other)) {
-      other = [other]
-    }
-    other.forEAch(u.append)
-  	return u
+  	return this.#compose(u, other, all)
   }
 
   intersect (other, all = false) {
   	const i = new Intersect()
-  	i.all = all
-  	i.append(this)
-    if (!Array.isArray(other)) {
-      other = [other]
-    }
-    other.forEAch(i.append)
-  	return i
+    return this.#compose(i, other, all)
   }
 
   except (other, all = false) {
     const e = new Except()
-    e.all = all
-    e.append(this)
-    if (!Array.isArray(other)) {
-      other = [other]
-    }
-    other.forEAch(e.append)
-    return e
+    return this.#compose(e, other, all)
+  }
+
+  #compose (q, other, all = false) {
+    q.all = all
+    q.append(this)
+
+    other = Array.isArray(other) ? other : [other]
+    other.forEach(y => {
+      if (!(y instanceof Select)) {
+        throw new Error('only select query can be used in union/except/intersect')
+      }
+      if (this.fields.length !== y.fields.length) {
+        throw new Error('columns number mismatched between queries')
+      }
+      q.append(y)
+    })
+    return q
   }
 
   from (table) {
@@ -292,32 +298,31 @@ class Select {
   	return this
   }
 
-  join (table, ...rest) {
-  	const j = new Join(table, rest)
-  	j.inner = true
-  	j.left = true
-  	this.joins.push(j)
-  	return this
+  join (table, ...cdt) {
+    return this.#setJoin(table, true, true, cdt)
   }
 
-  leftjoin (table, ...rest) {
-  	const j = new Join(table, rest)
-  	j.inner = false
-  	j.left = true
-  	this.joins.push(j)
-  	return this
+  leftjoin (table, ...cdt) {
+    return this.#setJoin(table, false, true, cdt)
   }
 
-  rightjoin (table, ...rest) {
-  	const j = new Join(table, rest)
-  	j.inner = false
-  	j.left = false
-  	this.joins.push(j)
-  	return this
+  rightjoin (table, ...cdt) {
+    return this.#setJoin(table, false, false, cdt)
   }
 
-  columns (...rest) {
-    this.fields = this.fields.concat(rest)
+  #setJoin (table, inner = false, left = false, cdt = []) {
+    if (typeof table === 'string') {
+      table = checkIdent(table)
+    }
+    const j = new Join(table, cdt)
+    j.inner = inner
+    j.left = left
+    this.joins.push(j)
+    return this
+  }
+
+  columns (...cols) {
+    this.fields = this.fields.concat(Array.isArray(cols) ? cols : [cols])
     return this
   }
 
@@ -339,51 +344,36 @@ class Select {
   	return this
   }
 
+  #where (column, make) {
+    if (typeof column === 'string') {
+      column = make(column)
+    }
+    this.wheres.push(column)
+    return this
+  }
+
   eq (column) {
-  	if (typeof column === 'string') {
-  		column = createEqual(column)
-  	}
-  	this.wheres.push(column)
-  	return this
+  	return this.#where(column, createEqual)
   }
 
   ne (column) {
-  	if (typeof column === 'string') {
-  		column = createNotEqual(column)
-  	}
-  	this.wheres.push(column)
-  	return this
+  	return this.#where(column, createNotEqual)
   }
 
   lt (column) {
-  	if (typeof column === 'string') {
-  		column = createLesserThan(column)
-  	}
-  	this.wheres.push(column)
-  	return this
+  	return this.#where(column, createLesserThan)
   }
 
   le (column) {
-  	if (typeof column === 'string') {
-  		column = createLesserOrEqual(column)
-  	}
-  	this.wheres.push(column)
-  	return this
+  	return this.#where(column, createLesserOrEqual)
   }
 
   gt (column) {
-  	if (typeof column === 'string') {
-  		column = createGreaterThan(column)
-  	}
-  	this.wheres.push(column)
-  	return this
+  	return this.#where(column, createGreaterThan)
   }
 
   ge (column) {
-  	if (typeof column === 'string') {
-  		column = createGreaterOrEqual(column)
-  	}
-  	this.wheres.push(column)
+  	this.wheres.push(column, createGreaterOrEqual)
   	return this
   }
 
@@ -459,6 +449,9 @@ function createColumn (name, schema = '') {
   if (typeof name !== 'string') {
     throw new Error('expect name to be of type string')
   }
+  if (typeof name === 'string') {
+    name = checkIdent(name)
+  }
   return new Column(name, schema)
 }
 
@@ -466,6 +459,10 @@ function createAlias (name, alias) {
   if (name instanceof Value) {
     throw new Error('value can not be aliased')
   }
+  if (typeof name === 'string') {
+    name = checkIdent(name)
+  }
+  alias = checkIdent(alias)
   return new Alias(name, alias)
 }
 

@@ -1,4 +1,5 @@
 import { sqlify } from './utils'
+import { checkIdent } from './ident'
 
 class Function {
 	constructor(name, args) {
@@ -13,6 +14,9 @@ class Function {
 }
 
 function createExec(name, args) {
+	if (typeof name === 'string') {
+		name = checkIdent(name)
+	}
 	return new Function(name, args)
 }
 

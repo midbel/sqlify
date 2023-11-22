@@ -95,3 +95,11 @@ test('select with functions', () => {
   const q = select(alias('employees', 'e')).column(alias(fn, 'full'))
   expect(q.toSql()).to.equal('select concat(e.first, e.last) full from employees e')
 })
+
+test('select union', () => {
+  const q1 = select('employees').columns('name', 'age')
+  const q2 = select('customers').columns('name', 'age')
+  expect(q1.union(q2).toSql()).to.equal("select name, age from employees union select name, age from customers")
+  expect(q1.except(q2, true).toSql()).to.equal("select name, age from employees except all select name, age from customers")
+  expect(q1.intersect(q2, true).toSql()).to.equal("select name, age from employees intersect all select name, age from customers")
+})
