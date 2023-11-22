@@ -432,6 +432,9 @@ class Select {
 }
 
 function createSelect (table) {
+  if (typeof table === 'string') {
+    table = checkIdent(table)
+  }
   return new Select(table)
 }
 
