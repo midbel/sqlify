@@ -1,6 +1,6 @@
 import { sqlify, marker, isPrimitive } from './utils'
 import { checkIdent } from './ident'
-import { value } from './select'
+import { value } from './value'
 
 class Insert {
   constructor (table) {
@@ -13,8 +13,8 @@ class Insert {
     this.query = null
   }
 
-  columns (...rest) {
-  	rest.forEach(this.column)
+  columns (...cols) {
+  	cols.forEach(this.column.bind(this))
     return this
   }
 
@@ -56,7 +56,7 @@ class Insert {
     }
 
     let vs = []
-    if (this.values.length == 0) {
+    if (this.values.length === 0) {
       vs = this.fields.map(() => sqlify(marker))
     } else {
       vs = this.values.map(sqlify)

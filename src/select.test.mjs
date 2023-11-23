@@ -1,5 +1,6 @@
 import { test, expect } from 'vitest'
-import { select, alias, column, value, eq, ne, between } from './select'
+import { select } from './select'
+import { alias, column, value, eq, ne, between } from './value'
 import { marker } from './utils'
 import { exec } from './func'
 

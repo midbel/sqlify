@@ -1,5 +1,16 @@
-import { sqlify } from './utils'
+import { sqlify, marker } from './utils'
 import { checkIdent } from './ident'
+
+class Assign {
+	constructor(left, right) {
+		this.left = left
+		this.right = right
+	}
+
+	toSql() {
+		return `${sqlify(this.left)}=${sqlify(this.right)}`
+	}
+}
 
 class Update {
 	constructor(table) {
@@ -9,6 +20,11 @@ class Update {
 	    this.table = table
 	    this.fields = []
 	    this.wheres = []
+	}
+
+	column(name, value = marker) {
+		this.fields.push(new Assign(name, value))
+		return this
 	}
 
 	toSql() {

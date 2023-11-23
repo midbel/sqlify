@@ -1,6 +1,7 @@
 import { test, expect } from 'vitest'
 import { insert } from './insert'
-import { select, value } from './select'
+import { select } from './select'
+import { value } from './value'
 
 test('test insert', () => {
   let q = insert('employees').columns('first', 'last', 'dept')

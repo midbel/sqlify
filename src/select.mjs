@@ -1,150 +1,6 @@
 import { sqlify, marker, isPrimitive } from './utils'
 import { checkIdent } from './ident'
-
-class Between {
-  constructor (field, lower = marker, upper = marker) {
-    this.field = field
-    this.lower = lower
-    this.upper = upper
-  }
-
-  toSql () {
-    return `${sqlify(this.field)} between ${this.lower} and ${sqlify(this.upper)}`
-  }
-}
-
-function createBetween (name, lower = marker, upper = marker) {
-  if (typeof lower === 'string') {
-    lower = createValue(lower)
-  }
-  if (typeof upper === 'string') {
-    upper = createValue(upper)
-  }
-  if (typeof name === 'string') {
-    name = checkIdent(name)
-  }
-  return new Between(name, lower, upper)
-}
-
-class In {
-  constructor (field, values) {
-    this.field = field
-    this.values = values
-  }
-
-  toSql () {
-    const vs = this.values.map(sqlify)
-    return `${sqlify(this.field)} in (${vs.join(', ')})`
-  }
-}
-
-function createIn (field, ...values) {
-  if (typeof field === 'string') {
-    field = createColumn(field)
-  }
-  return new In(field, values.map(createValue))
-}
-
-class Comparison {
-  constructor (field, value = marker, op = '=') {
-    this.field = field
-    this.value = value
-    this.op = op
-  }
-
-  toSql () {
-    return [
-      sqlify(this.field),
-      this.op,
-      sqlify(this.value)
-    ].join('')
-  }
-}
-
-function createComparison (field, value = marker, operator = '?') {
-  if (typeof value === 'string') {
-    value = createValue(value)
-  }
-  if (typeof field === 'string') {
-    field = checkIdent(field)
-  }
-  return new Comparison(field, value, operator)
-}
-
-function createEqual (field, value = marker) {
-  return createComparison(field, value, '=')
-}
-
-function createNotEqual (field, value = marker) {
-  return createComparison(field, value, '<>')
-}
-
-function createLesserThan (field, value = marker) {
-  return createComparison(field, value, '<')
-}
-
-function createLesserOrEqual (field, value = marker) {
-  return createComparison(field, value, '<=')
-}
-
-function createGreaterThan (field, value = marker) {
-  return createComparison(field, value, '>')
-}
-
-function createGreaterOrEqual (field, value = marker) {
-  return createComparison(field, value, '>=')
-}
-
-class Value {
-  constructor (raw) {
-    this.value = raw
-  }
-
-  toSql () {
-  	if (typeof (this.value) === 'string') {
-  		const v = this.value.replaceAll('\'', '\'\'')
-  		return `'${v}'`
-  	} else if (this.value instanceof Date) {
-  		return this.value.toISOString()
-  	}
-    return this.value.toString()
-  }
-}
-
-class Column {
-  constructor (name, schema) {
-    this.name = name
-    this.schema = schema
-  }
-
-  alias (name) {
-  	return createAlias(this, name)
-  }
-
-  toSql () {
-    if (!this.schema) {
-      return sqlify(this.name)
-    }
-    return `${this.schema}.${sqlify(this.name)}`
-  }
-}
-
-class Alias {
-  constructor (name, alias) {
-    this.name = name
-    this.alias = alias
-  }
-
-  toSql () {
-    if (!this.alias) {
-      return sqlify(this.name)
-    }
-    if (this.name instanceof Select) {
-    	return `(${sqlify(this.name)}) ${this.alias}`
-    }
-    return `${sqlify(this.name)} ${this.alias}`
-  }
-}
+import {eq, ne, lt, le, gt, ge } from './value'
 
 class Order {
   constructor (column, order = 'asc') {
@@ -166,12 +22,12 @@ class Join {
   }
 
   eq (column, value) {
-    this.cdt.push(createEqual(column, value))
+    this.cdt.push(eq(column, value))
     return this
   }
 
   ne (column, value) {
-    this.cdt.push(createNotEqual(column, value))
+    this.cdt.push(ne(column, value))
     return this
   }
 
@@ -328,7 +184,7 @@ class Select {
 
   column (name) {
     if (typeof name === 'string') {
-      name = createColumn(name)
+      name = column(name)
     }
     this.fields.push(name)
     return this
@@ -353,40 +209,40 @@ class Select {
   }
 
   eq (column) {
-  	return this.#where(column, createEqual)
+  	return this.#where(column, eq)
   }
 
   ne (column) {
-  	return this.#where(column, createNotEqual)
+  	return this.#where(column, ne)
   }
 
   lt (column) {
-  	return this.#where(column, createLesserThan)
+  	return this.#where(column, lt)
   }
 
   le (column) {
-  	return this.#where(column, createLesserOrEqual)
+  	return this.#where(column, le)
   }
 
   gt (column) {
-  	return this.#where(column, createGreaterThan)
+  	return this.#where(column, gt)
   }
 
   ge (column) {
-  	this.wheres.push(column, createGreaterOrEqual)
+  	this.wheres.push(column, ge)
   	return this
   }
 
   between (column, not = false) {
     if (typeof column === 'string') {
-  		column = createBetween(column)
+  		column = between(column)
   	}
   	this.wheres.push(column)
   	return this
   }
 
   in (column, values) {
-    this.wheres.push(createIn(column, ...values))
+    // this.wheres.push(createIn(column, ...values))
     return this
   }
 
@@ -438,48 +294,6 @@ function createSelect (table) {
   return new Select(table)
 }
 
-function createValue (value) {
-  if (value === marker) {
-    return value
-  }
-  if (isPrimitive(value)) {
-    return new Value(value)
-  }
-  throw new Error(`invalid value type: ${value}`)
-}
-
-function createColumn (name, schema = '') {
-  if (typeof name !== 'string') {
-    throw new Error('expect name to be of type string')
-  }
-  if (typeof name === 'string') {
-    name = checkIdent(name)
-  }
-  return new Column(name, schema)
-}
-
-function createAlias (name, alias) {
-  if (name instanceof Value) {
-    throw new Error('value can not be aliased')
-  }
-  if (typeof name === 'string') {
-    name = checkIdent(name)
-  }
-  alias = checkIdent(alias)
-  return new Alias(name, alias)
-}
-
 export {
   createSelect as select,
-  createColumn as column,
-  createValue as value,
-  createAlias as alias,
-  createEqual as eq,
-  createNotEqual as ne,
-  createLesserThan as lt,
-  createLesserOrEqual as le,
-  createGreaterThan as gt,
-  createGreaterOrEqual as ge,
-  createBetween as between
-  // createIn as in,
 }
