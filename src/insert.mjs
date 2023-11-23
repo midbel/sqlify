@@ -1,8 +1,12 @@
 import { sqlify, marker, isPrimitive } from './utils'
+import { checkIdent } from './ident'
 import { value } from './select'
 
 class Insert {
   constructor (table) {
+  	if (typeof table === 'string') {
+  		table = checkIdent(table)
+  	}
     this.table = table
     this.fields = []
     this.values = []
@@ -10,11 +14,14 @@ class Insert {
   }
 
   columns (...rest) {
-    this.fields = this.fields.concat(rest)
+  	rest.forEach(this.column)
     return this
   }
 
   column (name) {
+  	if (typeof name === 'string') {
+  		name = checkIdent(name)
+  	}
     this.fields.push(name)
     return this
   }
@@ -26,11 +33,6 @@ class Insert {
     this.query = query
     return this
   }
-
-  // values (...rest) {
-  // 	rest.forEach(this.value)
-  // 	return this
-  // }
 
   value (val = marker) {
     if (this.query) {
