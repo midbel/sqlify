@@ -133,7 +133,47 @@ function createGreaterOrEqual (field, value = marker) {
   return createComparison(field, value, '>=')
 }
 
+class Where {
+	constructor() {
+		this.wheres = []
+	}
+
+  eq (column) {
+    return this.#where(column, createEqual)
+  }
+
+  ne (column) {
+    return this.#where(column, createNotEqual)
+  }
+
+  lt (column) {
+    return this.#where(column, createLesserThan)
+  }
+
+  le (column) {
+    return this.#where(column, createLesserOrEqual)
+  }
+
+  gt (column) {
+    return this.#where(column, createGreaterThan)
+  }
+
+  ge (column) {
+    this.wheres.push(column, createGreaterOrEqual)
+    return this
+  }
+
+  #where (column, make) {
+    if (typeof column === 'string') {
+      column = make(column)
+    }
+    this.wheres.push(column)
+    return this
+  }
+}
+
 export {
+  Where,
   createColumn as column,
   createValue as value,
   createAlias as alias,
@@ -143,6 +183,6 @@ export {
   createLesserOrEqual as le,
   createGreaterThan as gt,
   createGreaterOrEqual as ge,
-  createBetween as between
+  createBetween as between,
   // createIn as in,
 }
